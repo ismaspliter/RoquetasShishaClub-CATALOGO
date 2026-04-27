@@ -205,7 +205,9 @@ function buildCategoryState() {
   );
 
   state.categories = categories;
-  state.activeCategory = categories[0] || "";
+
+  const hasOffers = state.items.some((item) => item.isOffer);
+  state.activeCategory = hasOffers ? "OFERTAS" : (categories[0] || "");
   state.activeSubcategory = "ALL";
 }
 
