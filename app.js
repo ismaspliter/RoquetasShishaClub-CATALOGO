@@ -200,9 +200,16 @@ function toImageUrl(originalUrl) {
 }
 
 function buildCategoryState() {
-  const categories = [...new Set(state.items.map((item) => item.topCategory))].sort((a, b) =>
-    a.localeCompare(b, "es")
-  );
+  const PRIORITY = ["cachimbas", "cazoletas"];
+
+  const categories = [...new Set(state.items.map((item) => item.topCategory))].sort((a, b) => {
+    const ai = PRIORITY.indexOf(a.toLowerCase());
+    const bi = PRIORITY.indexOf(b.toLowerCase());
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b, "es");
+  });
 
   state.categories = categories;
 
