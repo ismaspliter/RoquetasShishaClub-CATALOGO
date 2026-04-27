@@ -23,12 +23,17 @@ const ui = {
   gallery: document.getElementById("gallery"),
   searchInput: document.getElementById("searchInput"),
   searchClear: document.getElementById("searchClear"),
+  imageLightbox: document.getElementById("imageLightbox"),
+  lightboxImage: document.getElementById("lightboxImage"),
+  lightboxCaption: document.getElementById("lightboxCaption"),
+  lightboxClose: document.getElementById("lightboxClose"),
 };
 
 bootstrap();
 
 async function bootstrap() {
   ui.subtitle.textContent = INFO_DESCRIPTION;
+  initLightbox();
   showLoading(true);
 
   try {
@@ -370,6 +375,38 @@ function initSearch() {
   });
 }
 
+function initLightbox() {
+  ui.lightboxClose.addEventListener("click", closeLightbox);
+
+  ui.imageLightbox.addEventListener("click", (event) => {
+    if (event.target === ui.imageLightbox) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !ui.imageLightbox.classList.contains("hidden")) {
+      closeLightbox();
+    }
+  });
+}
+
+function openLightbox(src, altText) {
+  ui.lightboxImage.src = src;
+  ui.lightboxImage.alt = altText || "Imagen de producto";
+  ui.lightboxCaption.textContent = altText || "Producto";
+  ui.imageLightbox.classList.remove("hidden");
+  ui.imageLightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("lightbox-open");
+}
+
+function closeLightbox() {
+  ui.imageLightbox.classList.add("hidden");
+  ui.imageLightbox.setAttribute("aria-hidden", "true");
+  ui.lightboxImage.src = "";
+  document.body.classList.remove("lightbox-open");
+}
+
 function renderGallery() {
   const items = getFilteredItems();
   ui.gallery.innerHTML = "";
@@ -401,6 +438,8 @@ function renderGallery() {
     img.alt = item.name || "Producto";
     img.loading = "lazy";
     img.src = item.imageUrl;
+    img.style.cursor = "zoom-in";
+    img.addEventListener("click", () => openLightbox(item.imageUrl, item.name || "Producto"));
 
     const caption = document.createElement("div");
     caption.className = "image-caption";
