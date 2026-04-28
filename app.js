@@ -144,6 +144,7 @@ function normalizeRows(rows) {
     nombre: headers.indexOf("nombre"),
     categoria: headers.indexOf("categoria"),
     stock: headers.indexOf("stock"),
+    sinStock: headers.indexOf("sin stock"),
     url: headers.indexOf("url"),
     oferta: headers.indexOf("oferta"),
     mostrarWeb: headers.indexOf("mostrar en web"),
@@ -171,6 +172,7 @@ function normalizeRows(rows) {
       price: getCell(cells, idx.precio).trim(),
       url: rawUrl,
       imageUrl: toImageUrl(rawUrl),
+      isOutOfStock: toBoolean(getCell(cells, idx.sinStock), false),
       isOffer: toBoolean(getCell(cells, idx.oferta), false),
       showInWeb: toBoolean(getCell(cells, idx.mostrarWeb), true),
     };
@@ -567,12 +569,24 @@ function renderGallery() {
       card.classList.add("offer-item");
     }
 
+    if (item.isOutOfStock) {
+      card.classList.add("out-of-stock");
+    }
+
     const img = document.createElement("img");
     img.alt = item.name || "Producto";
     img.loading = "lazy";
     img.src = item.imageUrl;
     img.style.cursor = "zoom-in";
     img.addEventListener("click", () => openLightbox(item.imageUrl, item.name || "Producto"));
+
+    if (item.isOutOfStock) {
+      const stockOverlay = document.createElement("span");
+      stockOverlay.className = "stock-overlay";
+      stockOverlay.textContent = "Sin Stock";
+      stockOverlay.setAttribute("aria-hidden", "true");
+      card.appendChild(stockOverlay);
+    }
 
     const caption = document.createElement("div");
     caption.className = "image-caption";
