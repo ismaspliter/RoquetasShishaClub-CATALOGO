@@ -142,6 +142,7 @@ function normalizeRows(rows) {
     url: headers.indexOf("url"),
     oferta: headers.indexOf("oferta"),
     mostrarWeb: headers.indexOf("mostrar en web"),
+    precio: headers.findIndex((h) => ["precio", "precios", "pvp"].includes(h)),
   };
 
   return rows.slice(1).map((cells) => {
@@ -162,6 +163,7 @@ function normalizeRows(rows) {
       topCategory,
       subcategoryPath,
       stock: getCell(cells, idx.stock).trim(),
+      price: getCell(cells, idx.precio).trim(),
       url: rawUrl,
       imageUrl: toImageUrl(rawUrl),
       isOffer: toBoolean(getCell(cells, idx.oferta), false),
@@ -444,27 +446,18 @@ function renderGallery() {
     const caption = document.createElement("div");
     caption.className = "image-caption";
 
-    const textWrap = document.createElement("div");
-    textWrap.className = "image-meta";
-
     const title = document.createElement("h3");
     title.textContent = item.name || "Sin nombre";
 
-    const pathTag = document.createElement("span");
-    pathTag.className = "image-tag";
-    pathTag.textContent = item.categoryPath;
+    caption.appendChild(title);
 
-    textWrap.appendChild(title);
-    textWrap.appendChild(pathTag);
-
-    if (item.isOffer) {
-      const offerTag = document.createElement("span");
-      offerTag.className = "offer-badge";
-      offerTag.textContent = "OFERTA";
-      textWrap.appendChild(offerTag);
+    if (item.price) {
+      const priceTag = document.createElement("span");
+      priceTag.className = "image-price-tag";
+      priceTag.textContent = item.price;
+      caption.appendChild(priceTag);
     }
 
-    caption.appendChild(textWrap);
     card.appendChild(img);
     card.appendChild(caption);
     ui.gallery.appendChild(card);

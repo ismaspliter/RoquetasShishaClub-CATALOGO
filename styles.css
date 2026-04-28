@@ -632,20 +632,27 @@ body.lightbox-open {
   -webkit-backdrop-filter: blur(2px);
   color: #fff;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
 .image-caption h3 {
   margin: 0;
+  flex: 1;
+  min-width: 0;
   font-size: 0.92rem;
   line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 
 .image-meta {
-  display: grid;
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
   gap: 5px;
+  min-width: 0;
 }
 
 .image-tag {
@@ -667,6 +674,21 @@ body.lightbox-open {
   border-radius: 999px;
   padding: 3px 8px;
   background: linear-gradient(120deg, #f8c813, #f47a11);
+}
+
+.image-price-tag {
+  margin-left: auto;
+  align-self: center;
+  flex-shrink: 0;
+  color: #111;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: linear-gradient(120deg, #ffffff, #ffe9ad);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
 }
 
 .lightbox {
@@ -835,5 +857,12 @@ body.connected .btn {
   .image-tag,
   .offer-badge {
     font-size: 0.66rem;
+  }
+
+  .image-price-tag {
+    right: 9px;
+    bottom: 9px;
+    font-size: 0.72rem;
+    padding: 4px 8px;
   }
 }
