@@ -567,18 +567,12 @@ function renderGallery() {
       card.classList.add("offer-item");
     }
 
-    // Arco árabe: la imagen va dentro de un wrapper con forma de arco
-    const archWrap = document.createElement("div");
-    archWrap.className = "az-arch-wrap";
-
     const img = document.createElement("img");
     img.alt = item.name || "Producto";
     img.loading = "lazy";
     img.src = item.imageUrl;
     img.style.cursor = "zoom-in";
     img.addEventListener("click", () => openLightbox(item.imageUrl, item.name || "Producto"));
-
-    archWrap.appendChild(img);
 
     const caption = document.createElement("div");
     caption.className = "image-caption";
@@ -595,7 +589,7 @@ function renderGallery() {
       caption.appendChild(priceTag);
     }
 
-    card.appendChild(archWrap);
+    card.appendChild(img);
     card.appendChild(caption);
     ui.gallery.appendChild(card);
   });
