@@ -289,8 +289,11 @@ function renderSubcategoryMenu() {
 
   const subcategories = getCurrentSubcategories();
   if (!subcategories.length) {
+    ui.subcategoryMenu.style.display = "none";
     return;
   }
+
+  ui.subcategoryMenu.style.display = "";
 
   const allButton = document.createElement("button");
   allButton.type = "button";
