@@ -147,6 +147,7 @@ function normalizeRows(rows) {
     sinStock: headers.indexOf("sin stock"),
     url: headers.indexOf("url"),
     oferta: headers.indexOf("oferta"),
+    liquidacion: headers.indexOf("liquidacion"),
     mostrarWeb: headers.indexOf("mostrar en web"),
     precio: headers.findIndex((h) => ["precio", "precios", "pvp"].includes(h)),
   };
@@ -174,6 +175,7 @@ function normalizeRows(rows) {
       imageUrl: toImageUrl(rawUrl),
       isOutOfStock: toBoolean(getCell(cells, idx.sinStock), false),
       isOffer: toBoolean(getCell(cells, idx.oferta), false),
+      isLiquidation: toBoolean(getCell(cells, idx.liquidacion), false),
       showInWeb: toBoolean(getCell(cells, idx.mostrarWeb), true),
     };
   });
@@ -239,6 +241,12 @@ function renderCategoryMenu() {
   if (hasOffers) {
     const offerButton = createCategoryButton("OFERTAS!", "OFERTAS", true);
     ui.categoryMenu.appendChild(offerButton);
+  }
+
+  const hasLiquidation = state.items.some((item) => item.isLiquidation);
+  if (hasLiquidation) {
+    const liquidationButton = createCategoryButton("Liquidación", "LIQUIDACION", true);
+    ui.categoryMenu.appendChild(liquidationButton);
   }
 
   state.categories.forEach((category) => {
@@ -347,6 +355,10 @@ function getCurrentSubcategories() {
 function getCategoryItems() {
   if (state.activeCategory === "OFERTAS") {
     return state.items.filter((item) => item.isOffer);
+  }
+
+  if (state.activeCategory === "LIQUIDACION") {
+    return state.items.filter((item) => item.isLiquidation);
   }
 
   return state.items.filter((item) => item.topCategory === state.activeCategory);
@@ -561,6 +573,8 @@ function renderGallery() {
 
   if (state.activeCategory === "OFERTAS") {
     ui.catalogTitle.textContent = "OFERTAS!";
+  } else if (state.activeCategory === "LIQUIDACION") {
+    ui.catalogTitle.textContent = "Liquidación";
   } else {
     ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
   }
