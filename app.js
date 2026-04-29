@@ -328,7 +328,20 @@ function getCurrentSubcategories() {
     return [];
   }
 
-  return subcategories.sort((a, b) => a.localeCompare(b, "es"));
+  const SUBCATEGORY_PRIORITY = {
+    cachimbas: ["Económicas (50-99)", "Standar (100-150)", "Premium (+150)"],
+  };
+
+  const priorityList = SUBCATEGORY_PRIORITY[state.activeCategory.toLowerCase()] || [];
+
+  return subcategories.sort((a, b) => {
+    const ai = priorityList.findIndex((p) => normalize(p) === normalize(a));
+    const bi = priorityList.findIndex((p) => normalize(p) === normalize(b));
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b, "es");
+  });
 }
 
 function getCategoryItems() {
