@@ -1021,6 +1021,13 @@ body.connected .historia-info .quick-link:last-child {
   box-shadow: 0 0 0 2px rgba(248, 200, 19, 0.35), 0 10px 24px rgba(239, 117, 130, 0.35);
 }
 
+.category-chip.anniversary-chip {
+  border-color: transparent;
+  color: #fff9df;
+  background: linear-gradient(120deg, #0fa3b1, #31c9d2);
+  box-shadow: 0 0 0 2px rgba(49, 201, 210, 0.3), 0 10px 24px rgba(49, 201, 210, 0.28);
+}
+
 .category-chip.soft-active {
   border-color: rgba(255, 255, 255, 0.24);
   color: var(--ink);

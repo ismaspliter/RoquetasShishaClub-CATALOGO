@@ -140,33 +140,43 @@ function normalizeRows(rows) {
   }
 
   const headers = rows[0].map((header) => header.trim().toLowerCase());
+  const findHeader = (...names) => {
+    const normalizedNames = names.map((name) => normalize(name));
+    return headers.findIndex((header) => normalizedNames.includes(normalize(header)));
+  };
+
   const idx = {
-    nombre: headers.indexOf("nombre"),
-    categoria: headers.indexOf("categoria"),
-    stock: headers.indexOf("stock"),
-    sinStock: headers.indexOf("sin stock"),
-    url: headers.indexOf("url"),
-    oferta: headers.indexOf("oferta"),
-    liquidacion: headers.indexOf("liquidacion"),
-    mostrarWeb: headers.indexOf("mostrar en web"),
-    precio: headers.findIndex((h) => ["precio", "precios", "pvp"].includes(h)),
+    nombre: findHeader("nombre"),
+    categoria: findHeader("categoria"),
+    stock: findHeader("stock"),
+    sinStock: findHeader("sin stock"),
+    url: findHeader("url"),
+    oferta: findHeader("oferta"),
+    liquidacion: findHeader("liquidacion"),
+    aniversario: findHeader("5 aniversario"),
+    segundaMano: findHeader("#2Mano", "2mano", "segunda mano"),
+    mostrarWeb: findHeader("mostrar en web"),
+    precio: findHeader("precio", "precios", "pvp"),
   };
 
   return rows.slice(1).map((cells) => {
     const rawCategory = getCell(cells, idx.categoria).trim();
-    const categoryParts = rawCategory
-      .split("/")
-      .map((part) => part.trim())
-      .filter(Boolean);
+    const hasCategory = Boolean(rawCategory);
+    const categoryParts = hasCategory
+      ? rawCategory
+        .split("/")
+        .map((part) => part.trim())
+        .filter(Boolean)
+      : [];
 
-    const topCategory = categoryParts[0] || "General";
-    const subcategoryPath = categoryParts.length > 1 ? categoryParts.slice(1).join("/") : "General";
+    const topCategory = categoryParts[0] || "";
+    const subcategoryPath = categoryParts.length > 1 ? categoryParts.slice(1).join("/") : (hasCategory ? "General" : "");
 
     const rawUrl = getCell(cells, idx.url).trim();
 
     return {
       name: getCell(cells, idx.nombre).trim(),
-      categoryPath: rawCategory || "General",
+      categoryPath: rawCategory,
       topCategory,
       subcategoryPath,
       stock: getCell(cells, idx.stock).trim(),
@@ -176,6 +186,8 @@ function normalizeRows(rows) {
       isOutOfStock: toBoolean(getCell(cells, idx.sinStock), false),
       isOffer: toBoolean(getCell(cells, idx.oferta), false),
       isLiquidation: toBoolean(getCell(cells, idx.liquidacion), false),
+      isAnniversary: toBoolean(getCell(cells, idx.aniversario), false),
+      isSecondHand: toBoolean(getCell(cells, idx.segundaMano), false),
       showInWeb: toBoolean(getCell(cells, idx.mostrarWeb), true),
     };
   });
@@ -218,7 +230,9 @@ function toImageUrl(originalUrl) {
 function buildCategoryState() {
   const PRIORITY = ["cachimbas", "cazoletas"];
 
-  const categories = [...new Set(state.items.map((item) => item.topCategory))].sort((a, b) => {
+  const categories = [...new Set(state.items
+    .filter((item) => item.topCategory)
+    .map((item) => item.topCategory))].sort((a, b) => {
     const ai = PRIORITY.indexOf(a.toLowerCase());
     const bi = PRIORITY.indexOf(b.toLowerCase());
     if (ai !== -1 && bi !== -1) return ai - bi;
@@ -229,23 +243,32 @@ function buildCategoryState() {
 
   state.categories = categories;
 
+  const hasAnniversary = state.items.some((item) => item.isAnniversary);
   const hasOffers = state.items.some((item) => item.isOffer);
-  state.activeCategory = hasOffers ? "OFERTAS" : (categories[0] || "");
+  state.activeCategory = hasAnniversary
+    ? "ANIVERSARIO"
+    : (hasOffers ? "OFERTAS" : (categories[0] || ""));
   state.activeSubcategory = "ALL";
 }
 
 function renderCategoryMenu() {
   ui.categoryMenu.innerHTML = "";
 
+  const hasAnniversary = state.items.some((item) => item.isAnniversary);
+  if (hasAnniversary) {
+    const anniversaryButton = createCategoryButton("5 Aniversario", "ANIVERSARIO", "anniversary");
+    ui.categoryMenu.appendChild(anniversaryButton);
+  }
+
   const hasOffers = state.items.some((item) => item.isOffer);
   if (hasOffers) {
-    const offerButton = createCategoryButton("OFERTAS!", "OFERTAS", true);
+    const offerButton = createCategoryButton("OFERTAS!", "OFERTAS", "offer");
     ui.categoryMenu.appendChild(offerButton);
   }
 
   const hasLiquidation = state.items.some((item) => item.isLiquidation);
   if (hasLiquidation) {
-    const liquidationButton = createCategoryButton("Liquidación", "LIQUIDACION", true);
+    const liquidationButton = createCategoryButton("Liquidación", "LIQUIDACION", "offer");
     ui.categoryMenu.appendChild(liquidationButton);
   }
 
@@ -253,15 +276,23 @@ function renderCategoryMenu() {
     const button = createCategoryButton(category, category, false);
     ui.categoryMenu.appendChild(button);
   });
+
+  const hasSecondHand = state.items.some((item) => item.isSecondHand);
+  if (hasSecondHand) {
+    const secondHandButton = createCategoryButton("#2Mano", "2MANO", "offer");
+    ui.categoryMenu.appendChild(secondHandButton);
+  }
 }
 
-function createCategoryButton(label, value, isOffer) {
+function createCategoryButton(label, value, variant = "default") {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "category-chip";
 
-  if (isOffer) {
+  if (variant === "offer") {
     button.classList.add("offer-chip");
+  } else if (variant === "anniversary") {
+    button.classList.add("anniversary-chip");
   }
 
   if (state.activeCategory === value) {
@@ -333,7 +364,11 @@ function renderSubcategoryMenu() {
 
 function getCurrentSubcategories() {
   const selected = getCategoryItems();
-  const subcategories = [...new Set(selected.map((item) => item.subcategoryPath))];
+  const subcategories = [...new Set(selected.map((item) => item.subcategoryPath).filter(Boolean))];
+
+  if (!subcategories.length) {
+    return [];
+  }
 
   if (subcategories.length === 1 && subcategories[0] === "General") {
     return [];
@@ -356,12 +391,20 @@ function getCurrentSubcategories() {
 }
 
 function getCategoryItems() {
+  if (state.activeCategory === "ANIVERSARIO") {
+    return state.items.filter((item) => item.isAnniversary);
+  }
+
   if (state.activeCategory === "OFERTAS") {
     return state.items.filter((item) => item.isOffer);
   }
 
   if (state.activeCategory === "LIQUIDACION") {
     return state.items.filter((item) => item.isLiquidation);
+  }
+
+  if (state.activeCategory === "2MANO") {
+    return state.items.filter((item) => item.isSecondHand);
   }
 
   return state.items.filter((item) => item.topCategory === state.activeCategory);
@@ -574,10 +617,14 @@ function renderGallery() {
   const items = getFilteredItems();
   ui.gallery.innerHTML = "";
 
-  if (state.activeCategory === "OFERTAS") {
+  if (state.activeCategory === "ANIVERSARIO") {
+    ui.catalogTitle.textContent = "5 Aniversario";
+  } else if (state.activeCategory === "OFERTAS") {
     ui.catalogTitle.textContent = "OFERTAS!";
   } else if (state.activeCategory === "LIQUIDACION") {
     ui.catalogTitle.textContent = "Liquidación";
+  } else if (state.activeCategory === "2MANO") {
+    ui.catalogTitle.textContent = "#2Mano";
   } else {
     ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
   }
