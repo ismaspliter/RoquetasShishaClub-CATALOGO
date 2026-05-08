@@ -1421,6 +1421,8 @@ body.connected .btn {
   .image-price-wrap {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 4px;
   }
 
   .image-tag,
@@ -1430,16 +1432,18 @@ body.connected .btn {
 
   .image-price-tag {
     margin-left: 0;
-    font-size: 0.65rem;
-    padding: 4px 8px;
+    font-size: 0.58rem;
+    padding: 3px 6px;
+    white-space: nowrap;
+    line-height: 1;
   }
 
   .image-price-tag.sale-price {
-    font-size: 0.86rem;
+    font-size: 0.76rem;
   }
 
   .image-price-tag.strikethrough {
-    font-size: 0.59rem;
+    font-size: 0.53rem;
   }
 
   .orders-layout {
