@@ -8,6 +8,7 @@ const INVALID_DEEP_LINK_MESSAGE =
   "La seccion, producto o categoria que te han compartido no se encuentra disponible en este momento.";
 const VALID_TABS = ["historia", "catalogo", "pedidos"];
 const VALID_SORTS = ["featured", "price-asc", "price-desc", "name-asc", "name-desc"];
+const DEEP_LINK_KEYS = ["tab", "cat", "sub", "q", "sort", "product"];
 
 const state = {
   items: [],
@@ -368,11 +369,33 @@ function hideDeepLinkNotice() {
 }
 
 function applyTabFromUrl() {
-  const params = new URLSearchParams(window.location.search);
+  const params = getUrlParams();
   const tab = params.get("tab");
   if (typeof state.setActiveTab === "function") {
     state.setActiveTab(tab || "historia", false);
   }
+}
+
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const hasKnownParams = DEEP_LINK_KEYS.some((key) => params.has(key));
+
+  if (hasKnownParams) {
+    return params;
+  }
+
+  const entries = Array.from(params.entries());
+  if (entries.length !== 1 || entries[0][1] !== "") {
+    return params;
+  }
+
+  const maybeEncodedQuery = entries[0][0] || "";
+  const decoded = decodeURIComponent(maybeEncodedQuery).replace(/^\?+/, "");
+  if (!decoded.includes("=")) {
+    return params;
+  }
+
+  return new URLSearchParams(decoded);
 }
 
 function initHistoryNavigation() {
@@ -458,7 +481,7 @@ function deriveCategoryForItem(item) {
 }
 
 function applyCatalogStateFromUrl() {
-  const params = new URLSearchParams(window.location.search);
+  const params = getUrlParams();
   const tab = params.get("tab");
   const categoryParam = params.get("cat");
   const subcategoryParam = params.get("sub");
@@ -955,11 +978,7 @@ function openLightbox(src, altText, price = "", salePrice = "") {
   state.activeProductName = altText || "Producto";
 
   const productName = altText || "este producto";
-  const priceLine =
-    price && salePrice
-      ? ` He visto que está a ${salePrice} (antes ${price}).`
-      : (salePrice ? ` He visto que está a ${salePrice}.` : (price ? ` He visto que está a ${price}.` : ""));
-  const message = `Hola, buenas! Me interesa ${productName}.${priceLine} Quería preguntaros disponibilidad y cómo podría pedirlo. Gracias!`;
+  const message = `Hola, buenas! Me interesa ${productName}. Quería preguntaros disponibilidad y cómo podría pedirlo. Gracias!`;
   ui.lightboxWhatsapp.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_ORDER_PHONE}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
 
   ui.imageLightbox.classList.remove("hidden");
