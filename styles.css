@@ -1022,14 +1022,14 @@ body.connected .historia-info .quick-link:last-child {
 }
 
 .image-price-tag.strikethrough {
-  color: #888;
-  background-color: rgba(180, 180, 180, 0.18);
+  color: #111;
+  background-color: rgba(255, 239, 170, 0.55);
   background-image: linear-gradient(
     to bottom right,
-    transparent calc(50% - 0.6px),
-    #ef7582 calc(50% - 0.6px),
-    #ef7582 calc(50% + 0.6px),
-    transparent calc(50% + 0.6px)
+    transparent calc(50% - 0.85px),
+    #ef7582 calc(50% - 0.85px),
+    #ef7582 calc(50% + 0.85px),
+    transparent calc(50% + 0.85px)
   );
   border-color: rgba(180, 180, 180, 0.3);
   box-shadow: none;
@@ -1408,10 +1408,19 @@ body.connected .btn {
     right: 8px;
     bottom: 8px;
     padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .image-caption h3 {
+    width: 100%;
     font-size: 0.84rem;
+  }
+
+  .image-price-wrap {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .image-tag,
@@ -1420,10 +1429,17 @@ body.connected .btn {
   }
 
   .image-price-tag {
-    right: 9px;
-    bottom: 9px;
-    font-size: 0.72rem;
+    margin-left: 0;
+    font-size: 0.65rem;
     padding: 4px 8px;
+  }
+
+  .image-price-tag.sale-price {
+    font-size: 0.86rem;
+  }
+
+  .image-price-tag.strikethrough {
+    font-size: 0.59rem;
   }
 
   .orders-layout {
