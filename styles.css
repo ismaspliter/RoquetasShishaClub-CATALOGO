@@ -1014,6 +1014,34 @@ body.connected .historia-info .quick-link:last-child {
   box-shadow: 0 8px 20px rgba(244, 122, 17, 0.26);
 }
 
+.image-price-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.image-price-tag.strikethrough {
+  color: #888;
+  background-color: rgba(180, 180, 180, 0.18);
+  background-image: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.6px),
+    #ef7582 calc(50% - 0.6px),
+    #ef7582 calc(50% + 0.6px),
+    transparent calc(50% + 0.6px)
+  );
+  border-color: rgba(180, 180, 180, 0.3);
+  box-shadow: none;
+  font-size: 0.66rem;
+}
+
+.image-price-tag.sale-price {
+  color: #ef7582;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
 .category-chip.offer-chip {
   border-color: transparent;
   color: #fff;
