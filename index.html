@@ -54,6 +54,8 @@
         <button class="tab-btn" data-tab="pedidos" role="tab" aria-selected="false">Pedidos y Envios</button>
       </nav>
 
+      <p id="deepLinkNotice" class="deep-link-notice hidden" role="status" aria-live="polite"></p>
+
       <!-- TAB: HISTORIA -->
       <div id="tab-historia" class="tab-panel" role="tabpanel">
 
@@ -294,26 +296,30 @@
           <button id="lightboxClose" class="lightbox-close" type="button" aria-label="Cerrar imagen">x</button>
           <img id="lightboxImage" class="lightbox-image" src="" alt="" />
           <p id="lightboxCaption" class="lightbox-caption"></p>
+          <div class="lightbox-actions">
+            <a
+              id="lightboxWhatsapp"
+              class="lightbox-whatsapp"
+              href="#"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Haz tu pedido por WhatsApp"
+            >
+              Pídela ahora!
+            </a>
+            <button
+              id="lightboxShare"
+              class="lightbox-share"
+              type="button"
+              aria-label="Copiar enlace para compartir"
+            >
+              Compartir
+            </button>
+          </div>
         </div>
       </div>
     </main>
 
     <script src="app.js"></script>
-    <script>
-      document.querySelectorAll(".tab-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          document.querySelectorAll(".tab-btn").forEach(function(b) {
-            b.classList.remove("active");
-            b.setAttribute("aria-selected", "false");
-          });
-          document.querySelectorAll(".tab-panel").forEach(function(p) {
-            p.classList.add("hidden");
-          });
-          btn.classList.add("active");
-          btn.setAttribute("aria-selected", "true");
-          document.getElementById("tab-" + btn.dataset.tab).classList.remove("hidden");
-        });
-      });
-    </script>
   </body>
 </html>

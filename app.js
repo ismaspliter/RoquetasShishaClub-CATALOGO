@@ -3,6 +3,11 @@ const CSV_URL =
 
 const INFO_DESCRIPTION =
   "Roquetas Shisha Club: especialistas en cachimbas y accesorios en Roquetas de Mar.";
+const WHATSAPP_ORDER_PHONE = "34651441589";
+const INVALID_DEEP_LINK_MESSAGE =
+  "La seccion, producto o categoria que te han compartido no se encuentra disponible en este momento.";
+const VALID_TABS = ["historia", "catalogo", "pedidos"];
+const VALID_SORTS = ["featured", "price-asc", "price-desc", "name-asc", "name-desc"];
 
 const state = {
   items: [],
@@ -11,6 +16,11 @@ const state = {
   activeSubcategory: "ALL",
   searchQuery: "",
   sortBy: "featured",
+  activeTab: "historia",
+  activeProduct: "",
+  activeProductName: "",
+  isApplyingUrlState: false,
+  deepLinkNoticeTimer: null,
 };
 
 const ui = {
@@ -30,14 +40,20 @@ const ui = {
   lightboxImage: document.getElementById("lightboxImage"),
   lightboxCaption: document.getElementById("lightboxCaption"),
   lightboxClose: document.getElementById("lightboxClose"),
+  lightboxWhatsapp: document.getElementById("lightboxWhatsapp"),
+  lightboxShare: document.getElementById("lightboxShare"),
+  deepLinkNotice: document.getElementById("deepLinkNotice"),
 };
 
 bootstrap();
 
 async function bootstrap() {
+  initTabs();
+  applyTabFromUrl();
   ui.subtitle.textContent = INFO_DESCRIPTION;
   initOpeningStatus();
   initLightbox();
+  initHistoryNavigation();
   showLoading(true);
 
   try {
@@ -52,6 +68,8 @@ async function bootstrap() {
     renderGallery();
     initSearch();
     initSort();
+    applyCatalogStateFromUrl();
+    syncUrlFromState();
 
     ui.setupPanel.style.display = "none";
     document.body.classList.add("connected");
@@ -286,6 +304,303 @@ function renderCategoryMenu() {
   }
 }
 
+function initTabs() {
+  const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
+  const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+
+  const setActiveTab = (tab, shouldSyncUrl = true) => {
+    const selectedTab = VALID_TABS.includes(tab) ? tab : "historia";
+    state.activeTab = selectedTab;
+
+    tabButtons.forEach((btn) => {
+      const isActive = btn.dataset.tab === selectedTab;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    tabPanels.forEach((panel) => {
+      const isActive = panel.id === `tab-${selectedTab}`;
+      panel.classList.toggle("hidden", !isActive);
+    });
+
+    if (shouldSyncUrl) {
+      syncUrlFromState();
+    }
+  };
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setActiveTab(btn.dataset.tab || "historia", true);
+    });
+  });
+
+  state.setActiveTab = setActiveTab;
+}
+
+function showDeepLinkNotice(message) {
+  if (!ui.deepLinkNotice) {
+    return;
+  }
+
+  ui.deepLinkNotice.textContent = message;
+  ui.deepLinkNotice.classList.remove("hidden");
+
+  if (state.deepLinkNoticeTimer) {
+    window.clearTimeout(state.deepLinkNoticeTimer);
+  }
+
+  state.deepLinkNoticeTimer = window.setTimeout(() => {
+    ui.deepLinkNotice.classList.add("hidden");
+  }, 6000);
+}
+
+function hideDeepLinkNotice() {
+  if (!ui.deepLinkNotice) {
+    return;
+  }
+
+  if (state.deepLinkNoticeTimer) {
+    window.clearTimeout(state.deepLinkNoticeTimer);
+    state.deepLinkNoticeTimer = null;
+  }
+
+  ui.deepLinkNotice.classList.add("hidden");
+}
+
+function applyTabFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  if (typeof state.setActiveTab === "function") {
+    state.setActiveTab(tab || "historia", false);
+  }
+}
+
+function initHistoryNavigation() {
+  window.addEventListener("popstate", () => {
+    state.isApplyingUrlState = true;
+    try {
+      applyTabFromUrl();
+      if (state.items.length) {
+        applyCatalogStateFromUrl();
+      }
+    } finally {
+      state.isApplyingUrlState = false;
+    }
+  });
+}
+
+function slugify(value) {
+  return normalize(String(value || ""))
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function mapCategoryToParam(categoryValue) {
+  if (!categoryValue) return "";
+  const normalized = normalize(categoryValue);
+  if (normalized === "aniversario") return "aniversario";
+  if (normalized === "ofertas") return "ofertas";
+  if (normalized === "liquidacion") return "liquidacion";
+  if (normalized === "2mano") return "2mano";
+  return slugify(categoryValue);
+}
+
+function mapParamToCategory(categoryParam) {
+  const value = slugify(categoryParam || "");
+  if (!value) return "";
+  if (value === "aniversario") return "ANIVERSARIO";
+  if (value === "ofertas") return "OFERTAS";
+  if (value === "liquidacion") return "LIQUIDACION";
+  if (value === "2mano") return "2MANO";
+
+  const match = state.categories.find((category) => slugify(category) === value);
+  return match || "";
+}
+
+function toProductParam(item) {
+  return slugify(item.name || "producto");
+}
+
+function findItemByProductParam(productParam) {
+  const target = slugify(productParam || "");
+  if (!target) {
+    return null;
+  }
+  return state.items.find((item) => toProductParam(item) === target) || null;
+}
+
+function deriveCategoryForItem(item) {
+  if (!item) {
+    return state.activeCategory;
+  }
+
+  if (item.topCategory) {
+    return item.topCategory;
+  }
+
+  if (item.isAnniversary) {
+    return "ANIVERSARIO";
+  }
+
+  if (item.isOffer) {
+    return "OFERTAS";
+  }
+
+  if (item.isLiquidation) {
+    return "LIQUIDACION";
+  }
+
+  if (item.isSecondHand) {
+    return "2MANO";
+  }
+
+  return state.activeCategory;
+}
+
+function applyCatalogStateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  const categoryParam = params.get("cat");
+  const subcategoryParam = params.get("sub");
+  const searchParam = params.get("q");
+  const sortParam = params.get("sort");
+  const productParam = params.get("product");
+
+  const hasCatalogIntent = Boolean(categoryParam || subcategoryParam || searchParam || productParam);
+  let hasInvalidDeepLink = false;
+
+  if (tab && !VALID_TABS.includes(tab)) {
+    hasInvalidDeepLink = true;
+  }
+
+  if (typeof state.setActiveTab === "function") {
+    state.setActiveTab(tab || (hasCatalogIntent ? "catalogo" : (state.activeTab || "historia")), false);
+  }
+
+  const requestedProduct = findItemByProductParam(productParam);
+  if (productParam && !requestedProduct) {
+    hasInvalidDeepLink = true;
+  }
+
+  const mappedCategory = mapParamToCategory(categoryParam);
+
+  if (requestedProduct) {
+    state.activeCategory = deriveCategoryForItem(requestedProduct);
+    state.activeSubcategory = requestedProduct.subcategoryPath || "ALL";
+  } else {
+    if (categoryParam && !mappedCategory) {
+      hasInvalidDeepLink = true;
+    }
+
+    if (mappedCategory) {
+      state.activeCategory = mappedCategory;
+    }
+
+    if (subcategoryParam) {
+      const currentSubcategories = getCurrentSubcategories();
+      const subMatch = currentSubcategories.find((sub) => slugify(sub) === slugify(subcategoryParam));
+      state.activeSubcategory = subMatch || "ALL";
+      if (!subMatch) {
+        hasInvalidDeepLink = true;
+      }
+    } else {
+      state.activeSubcategory = "ALL";
+    }
+  }
+
+  state.searchQuery = (searchParam || "").trim();
+  ui.searchInput.value = state.searchQuery;
+  ui.searchClear.classList.toggle("hidden", !state.searchQuery);
+
+  if (VALID_SORTS.includes(sortParam || "")) {
+    state.sortBy = sortParam;
+  } else if (sortParam) {
+    hasInvalidDeepLink = true;
+  }
+  ui.sortSelect.value = state.sortBy;
+
+  renderCategoryMenu();
+  renderSubcategoryMenu();
+  renderGallery();
+
+  if (requestedProduct && state.activeTab === "catalogo") {
+    state.activeProduct = toProductParam(requestedProduct);
+    openLightbox(
+      requestedProduct.imageUrl,
+      requestedProduct.name || "Producto",
+      requestedProduct.price || "",
+      requestedProduct.salePrice || ""
+    );
+  } else {
+    state.activeProduct = "";
+    closeLightbox();
+  }
+
+  if (hasInvalidDeepLink) {
+    showDeepLinkNotice(INVALID_DEEP_LINK_MESSAGE);
+  } else {
+    hideDeepLinkNotice();
+  }
+}
+
+function syncUrlFromState() {
+  if (state.isApplyingUrlState) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const activeTab = state.activeTab || "historia";
+
+  if (activeTab !== "historia") {
+    params.set("tab", activeTab);
+  } else {
+    params.delete("tab");
+  }
+
+  if (activeTab === "catalogo") {
+    const categoryParam = mapCategoryToParam(state.activeCategory);
+    if (categoryParam) {
+      params.set("cat", categoryParam);
+    } else {
+      params.delete("cat");
+    }
+
+    if (state.activeSubcategory && state.activeSubcategory !== "ALL") {
+      params.set("sub", slugify(state.activeSubcategory));
+    } else {
+      params.delete("sub");
+    }
+
+    if (state.searchQuery) {
+      params.set("q", state.searchQuery);
+    } else {
+      params.delete("q");
+    }
+
+    if (state.sortBy && state.sortBy !== "featured") {
+      params.set("sort", state.sortBy);
+    } else {
+      params.delete("sort");
+    }
+
+    if (state.activeProduct) {
+      params.set("product", state.activeProduct);
+    } else {
+      params.delete("product");
+    }
+  } else {
+    params.delete("cat");
+    params.delete("sub");
+    params.delete("q");
+    params.delete("sort");
+    params.delete("product");
+  }
+
+  const nextQuery = params.toString();
+  const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+  window.history.replaceState(null, "", nextUrl);
+}
+
 function createCategoryButton(label, value, variant = "default") {
   const button = document.createElement("button");
   button.type = "button";
@@ -312,6 +627,7 @@ function createCategoryButton(label, value, variant = "default") {
     renderCategoryMenu();
     renderSubcategoryMenu();
     renderGallery();
+    syncUrlFromState();
   });
 
   return button;
@@ -340,6 +656,7 @@ function renderSubcategoryMenu() {
     state.activeSubcategory = "ALL";
     renderSubcategoryMenu();
     renderGallery();
+    syncUrlFromState();
   });
   ui.subcategoryMenu.appendChild(allButton);
 
@@ -358,6 +675,7 @@ function renderSubcategoryMenu() {
       state.activeSubcategory = subcategory;
       renderSubcategoryMenu();
       renderGallery();
+      syncUrlFromState();
     });
 
     ui.subcategoryMenu.appendChild(button);
@@ -485,6 +803,7 @@ function parsePriceValue(priceText) {
 function initSearch() {
   ui.searchInput.addEventListener("input", () => {
     state.searchQuery = ui.searchInput.value.trim();
+    state.activeProduct = "";
     ui.searchClear.classList.toggle("hidden", !state.searchQuery);
     if (state.searchQuery) {
       ui.catalogTitle.textContent = `Resultados: "${state.searchQuery}"`;
@@ -492,14 +811,17 @@ function initSearch() {
       ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
     }
     renderGallery();
+    syncUrlFromState();
   });
 
   ui.searchClear.addEventListener("click", () => {
     ui.searchInput.value = "";
     state.searchQuery = "";
+    state.activeProduct = "";
     ui.searchClear.classList.add("hidden");
     ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
     renderGallery();
+    syncUrlFromState();
     ui.searchInput.focus();
   });
 }
@@ -508,6 +830,7 @@ function initSort() {
   ui.sortSelect.addEventListener("change", () => {
     state.sortBy = ui.sortSelect.value;
     renderGallery();
+    syncUrlFromState();
   });
 }
 
@@ -586,6 +909,22 @@ function initOpeningStatus() {
 function initLightbox() {
   ui.lightboxClose.addEventListener("click", closeLightbox);
 
+  ui.lightboxShare.addEventListener("click", async () => {
+    if (!state.activeProductName) {
+      return;
+    }
+
+    syncUrlFromState();
+    const shareText = `He encontrado ${state.activeProductName} en Roquetas Shisha Club miralo en este enlace: ${window.location.href}`;
+    const copied = await copyToClipboard(shareText);
+
+    const originalLabel = ui.lightboxShare.textContent;
+    ui.lightboxShare.textContent = copied ? "Copiado" : "No se pudo copiar";
+    window.setTimeout(() => {
+      ui.lightboxShare.textContent = originalLabel;
+    }, 1500);
+  });
+
   ui.imageLightbox.addEventListener("click", (event) => {
     if (event.target === ui.imageLightbox) {
       closeLightbox();
@@ -599,20 +938,77 @@ function initLightbox() {
   });
 }
 
-function openLightbox(src, altText) {
+function openLightbox(src, altText, price = "", salePrice = "") {
   ui.lightboxImage.src = src;
   ui.lightboxImage.alt = altText || "Imagen de producto";
-  ui.lightboxCaption.textContent = altText || "Producto";
+  const pieces = [altText || "Producto"];
+
+  if (price && salePrice) {
+    pieces.push(`${price} -> ${salePrice}`);
+  } else if (salePrice) {
+    pieces.push(salePrice);
+  } else if (price) {
+    pieces.push(price);
+  }
+
+  ui.lightboxCaption.textContent = pieces.join(" | ");
+  state.activeProductName = altText || "Producto";
+
+  const productName = altText || "este producto";
+  const priceLine =
+    price && salePrice
+      ? ` He visto que está a ${salePrice} (antes ${price}).`
+      : (salePrice ? ` He visto que está a ${salePrice}.` : (price ? ` He visto que está a ${price}.` : ""));
+  const message = `Hola, buenas! Me interesa ${productName}.${priceLine} Quería preguntaros disponibilidad y cómo podría pedirlo. Gracias!`;
+  ui.lightboxWhatsapp.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_ORDER_PHONE}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
+
   ui.imageLightbox.classList.remove("hidden");
   ui.imageLightbox.setAttribute("aria-hidden", "false");
   document.body.classList.add("lightbox-open");
+  syncUrlFromState();
 }
 
 function closeLightbox() {
   ui.imageLightbox.classList.add("hidden");
   ui.imageLightbox.setAttribute("aria-hidden", "true");
   ui.lightboxImage.src = "";
+  ui.lightboxWhatsapp.href = "#";
+  state.activeProductName = "";
   document.body.classList.remove("lightbox-open");
+
+  if (state.activeProduct) {
+    state.activeProduct = "";
+    syncUrlFromState();
+  }
+}
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  const helper = document.createElement("textarea");
+  helper.value = text;
+  helper.setAttribute("readonly", "");
+  helper.style.position = "fixed";
+  helper.style.opacity = "0";
+  document.body.appendChild(helper);
+  helper.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch (error) {
+    copied = false;
+  }
+
+  document.body.removeChild(helper);
+  return copied;
 }
 
 function renderGallery() {
@@ -657,7 +1053,15 @@ function renderGallery() {
     img.loading = "lazy";
     img.src = item.imageUrl;
     img.style.cursor = "zoom-in";
-    img.addEventListener("click", () => openLightbox(item.imageUrl, item.name || "Producto"));
+    img.addEventListener("click", () => {
+      state.activeProduct = toProductParam(item);
+      openLightbox(
+        item.imageUrl,
+        item.name || "Producto",
+        item.price || "",
+        item.salePrice || ""
+      );
+    });
 
     if (item.isOutOfStock) {
       const stockOverlay = document.createElement("span");
