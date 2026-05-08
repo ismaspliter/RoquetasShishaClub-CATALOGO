@@ -157,6 +157,7 @@ function normalizeRows(rows) {
     segundaMano: findHeader("#2Mano", "2mano", "segunda mano"),
     mostrarWeb: findHeader("mostrar en web"),
     precio: findHeader("precio", "precios", "pvp"),
+    precioOferta: findHeader("precio oferta", "precio-oferta", "oferta precio"),
   };
 
   return rows.slice(1).map((cells) => {
@@ -181,6 +182,7 @@ function normalizeRows(rows) {
       subcategoryPath,
       stock: getCell(cells, idx.stock).trim(),
       price: getCell(cells, idx.precio).trim(),
+      salePrice: getCell(cells, idx.precioOferta).trim(),
       url: rawUrl,
       imageUrl: toImageUrl(rawUrl),
       isOutOfStock: toBoolean(getCell(cells, idx.sinStock), false),
@@ -673,11 +675,25 @@ function renderGallery() {
 
     caption.appendChild(title);
 
-    if (item.price) {
-      const priceTag = document.createElement("span");
-      priceTag.className = "image-price-tag";
-      priceTag.textContent = item.price;
-      caption.appendChild(priceTag);
+    if (item.price || item.salePrice) {
+      const priceWrap = document.createElement("div");
+      priceWrap.className = "image-price-wrap";
+
+      if (item.price) {
+        const priceTag = document.createElement("span");
+        priceTag.className = item.salePrice ? "image-price-tag strikethrough" : "image-price-tag";
+        priceTag.textContent = item.price;
+        priceWrap.appendChild(priceTag);
+      }
+
+      if (item.salePrice) {
+        const salePriceTag = document.createElement("span");
+        salePriceTag.className = "image-price-tag sale-price";
+        salePriceTag.textContent = item.salePrice;
+        priceWrap.appendChild(salePriceTag);
+      }
+
+      caption.appendChild(priceWrap);
     }
 
     card.appendChild(img);
