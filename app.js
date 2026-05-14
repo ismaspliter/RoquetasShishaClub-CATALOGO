@@ -1082,6 +1082,20 @@ function renderGallery() {
       );
     });
 
+    if (item.isAnniversary) {
+      const stamp = document.createElement("span");
+      stamp.className = "anniversary-stamp";
+      stamp.setAttribute("aria-hidden", "true");
+
+      const stampImg = document.createElement("img");
+      stampImg.src = "5aniversario.png";
+      stampImg.alt = "";
+      stampImg.loading = "lazy";
+      stamp.appendChild(stampImg);
+
+      card.appendChild(stamp);
+    }
+
     if (item.isOutOfStock) {
       const stockOverlay = document.createElement("span");
       stockOverlay.className = "stock-overlay";
