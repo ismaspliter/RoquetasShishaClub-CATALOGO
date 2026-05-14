@@ -977,14 +977,17 @@ function openLightbox(src, altText, price = "", salePrice = "") {
   ui.lightboxCaption.textContent = pieces.join(" | ");
   state.activeProductName = altText || "Producto";
 
+  // Ensure the shared link points to the currently opened product.
+  syncUrlFromState();
+  const productLink = window.location.href;
+
   const productName = altText || "este producto";
-  const message = `Hola, buenas! Me interesa ${productName}. Quería preguntaros disponibilidad y cómo podría pedirlo. Gracias!`;
+  const message = `Hola, buenas! Me interesa ${productName}. Quería preguntaros disponibilidad y cómo podría pedirlo. Enlace del producto: ${productLink}. Gracias!`;
   ui.lightboxWhatsapp.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_ORDER_PHONE}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
 
   ui.imageLightbox.classList.remove("hidden");
   ui.imageLightbox.setAttribute("aria-hidden", "false");
   document.body.classList.add("lightbox-open");
-  syncUrlFromState();
 }
 
 function closeLightbox() {
