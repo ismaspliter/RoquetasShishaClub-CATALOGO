@@ -1170,6 +1170,15 @@ body.lightbox-open {
   animation: rise 420ms ease forwards;
 }
 
+.image-card,
+.image-card img,
+.image-caption,
+.stock-overlay,
+.category-chip {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .image-card.offer-item {
   border-color: rgba(248, 200, 19, 0.8);
   box-shadow: 0 0 0 1px rgba(248, 200, 19, 0.6), 0 18px 30px rgba(244, 122, 17, 0.28);
@@ -1637,5 +1646,33 @@ body.connected .btn {
     min-height: 10px;
     max-height: 10px;
     flex-basis: 10px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .panel,
+  .catalog-shell,
+  .image-caption,
+  .stock-overlay {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .image-card {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .image-card img,
+  .image-caption,
+  .stock-overlay,
+  .category-chip {
+    transform: translateZ(0);
+  }
+
+  .category-chip,
+  .image-card img {
+    -webkit-tap-highlight-color: transparent;
   }
 }
