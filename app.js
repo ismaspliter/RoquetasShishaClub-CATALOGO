@@ -2,7 +2,7 @@ const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTICNfcYM4ZrXvEr05Sd5n6pVk_wyRjBcl8A1EsP2Nlu-cgK8yJT1OYANoAp88ktCvHsTEAiXGquXdB/pub?gid=0&single=true&output=csv";
 
 const INFO_DESCRIPTION =
-  "Roquetas Shisha Club: especialistas en cachimbas y accesorios en Roquetas de Mar.";
+  "Tienda de cachimbas y accesorios. L-V 07:00-14:30. S 07:00-11:30. Carretera de la Mojonera 282.";
 const WHATSAPP_ORDER_PHONE = "34651441589";
 const INVALID_DEEP_LINK_MESSAGE =
   "La seccion, producto o categoria que te han compartido no se encuentra disponible en este momento.";
@@ -248,18 +248,31 @@ function toImageUrl(originalUrl) {
   return originalUrl;
 }
 
+function stripSpecialCategoryMarker(category) {
+  return String(category || "").trim().replace(/^!+\s*/, "");
+}
+
 function buildCategoryState() {
   const PRIORITY = ["cachimbas", "cazoletas"];
+  const isPinnedCategory = (category) => String(category || "").trim().startsWith("!");
+  const categorySortLabel = (category) => stripSpecialCategoryMarker(category);
 
   const categories = [...new Set(state.items
     .filter((item) => item.topCategory)
     .map((item) => item.topCategory))].sort((a, b) => {
-    const ai = PRIORITY.indexOf(a.toLowerCase());
-    const bi = PRIORITY.indexOf(b.toLowerCase());
+    const aPinned = isPinnedCategory(a);
+    const bPinned = isPinnedCategory(b);
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+
+    const aLabel = categorySortLabel(a);
+    const bLabel = categorySortLabel(b);
+
+    const ai = PRIORITY.indexOf(aLabel.toLowerCase());
+    const bi = PRIORITY.indexOf(bLabel.toLowerCase());
     if (ai !== -1 && bi !== -1) return ai - bi;
     if (ai !== -1) return -1;
     if (bi !== -1) return 1;
-    return a.localeCompare(b, "es");
+    return aLabel.localeCompare(bLabel, "es");
   });
 
   state.categories = categories;
@@ -274,6 +287,9 @@ function buildCategoryState() {
 
 function renderCategoryMenu() {
   ui.categoryMenu.innerHTML = "";
+
+  const isPinnedCategory = (category) => String(category || "").trim().startsWith("!");
+  const categoryDisplayLabel = (category) => stripSpecialCategoryMarker(category);
 
   const hasAnniversary = state.items.some((item) => item.isAnniversary);
   if (hasAnniversary) {
@@ -294,7 +310,11 @@ function renderCategoryMenu() {
   }
 
   state.categories.forEach((category) => {
-    const button = createCategoryButton(category, category, false);
+    const button = createCategoryButton(
+      categoryDisplayLabel(category),
+      category,
+      isPinnedCategory(category) ? "pinned" : "default"
+    );
     ui.categoryMenu.appendChild(button);
   });
 
@@ -420,12 +440,13 @@ function slugify(value) {
 
 function mapCategoryToParam(categoryValue) {
   if (!categoryValue) return "";
-  const normalized = normalize(categoryValue);
+  const cleanCategory = stripSpecialCategoryMarker(categoryValue);
+  const normalized = normalize(cleanCategory);
   if (normalized === "aniversario") return "aniversario";
   if (normalized === "ofertas") return "ofertas";
   if (normalized === "liquidacion") return "liquidacion";
   if (normalized === "2mano") return "2mano";
-  return slugify(categoryValue);
+  return slugify(cleanCategory);
 }
 
 function mapParamToCategory(categoryParam) {
@@ -436,7 +457,7 @@ function mapParamToCategory(categoryParam) {
   if (value === "liquidacion") return "LIQUIDACION";
   if (value === "2mano") return "2MANO";
 
-  const match = state.categories.find((category) => slugify(category) === value);
+  const match = state.categories.find((category) => slugify(stripSpecialCategoryMarker(category)) === value);
   return match || "";
 }
 
@@ -633,6 +654,8 @@ function createCategoryButton(label, value, variant = "default") {
     button.classList.add("offer-chip");
   } else if (variant === "anniversary") {
     button.classList.add("anniversary-chip");
+  } else if (variant === "pinned") {
+    button.classList.add("pinned-chip");
   }
 
   if (state.activeCategory === value) {
@@ -831,7 +854,7 @@ function initSearch() {
     if (state.searchQuery) {
       ui.catalogTitle.textContent = `Resultados: "${state.searchQuery}"`;
     } else {
-      ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
+      ui.catalogTitle.textContent = stripSpecialCategoryMarker(state.activeCategory) || "Catalogo";
     }
     renderGallery();
     syncUrlFromState();
@@ -842,7 +865,7 @@ function initSearch() {
     state.searchQuery = "";
     state.activeProduct = "";
     ui.searchClear.classList.add("hidden");
-    ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
+    ui.catalogTitle.textContent = stripSpecialCategoryMarker(state.activeCategory) || "Catalogo";
     renderGallery();
     syncUrlFromState();
     ui.searchInput.focus();
@@ -864,10 +887,10 @@ function initOpeningStatus() {
 
   const getSlotsForDay = (day) => {
     if (day >= 1 && day <= 5) {
-      return [[7 * 60, 13 * 60], [15 * 60, 19 * 60]];
+      return [[7 * 60, 14 * 60 + 30]];
     }
     if (day === 6) {
-      return [[7 * 60 + 30, 12 * 60]];
+      return [[7 * 60, 11 * 60 + 30]];
     }
     return [];
   };
@@ -1046,7 +1069,7 @@ function renderGallery() {
   } else if (state.activeCategory === "2MANO") {
     ui.catalogTitle.textContent = "#2Mano";
   } else {
-    ui.catalogTitle.textContent = state.activeCategory || "Catalogo";
+    ui.catalogTitle.textContent = stripSpecialCategoryMarker(state.activeCategory) || "Catalogo";
   }
 
   if (!items.length) {

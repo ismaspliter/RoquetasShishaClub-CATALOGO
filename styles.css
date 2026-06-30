@@ -1133,6 +1133,13 @@ body.connected .historia-info .quick-link:last-child {
   box-shadow: 0 4px 12px rgba(49, 201, 210, 0.12);
 }
 
+.category-chip.pinned-chip:not(.active) {
+  background: linear-gradient(145deg, rgba(248, 200, 19, 0.24), rgba(244, 122, 17, 0.2));
+  color: var(--text-strong);
+  border-color: rgba(248, 200, 19, 0.78);
+  box-shadow: 0 5px 14px rgba(244, 122, 17, 0.18);
+}
+
 .category-chip.soft-active {
   border-color: rgba(248, 200, 19, 0.8);
   color: var(--text-strong);
