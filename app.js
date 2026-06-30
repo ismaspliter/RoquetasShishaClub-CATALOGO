@@ -291,6 +291,18 @@ function renderCategoryMenu() {
   const isPinnedCategory = (category) => String(category || "").trim().startsWith("!");
   const categoryDisplayLabel = (category) => stripSpecialCategoryMarker(category);
 
+  const pinnedCategories = state.categories.filter((category) => isPinnedCategory(category));
+  const regularCategories = state.categories.filter((category) => !isPinnedCategory(category));
+
+  pinnedCategories.forEach((category) => {
+    const button = createCategoryButton(
+      categoryDisplayLabel(category),
+      category,
+      "pinned"
+    );
+    ui.categoryMenu.appendChild(button);
+  });
+
   const hasAnniversary = state.items.some((item) => item.isAnniversary);
   if (hasAnniversary) {
     const anniversaryButton = createCategoryButton("5 Aniversario", "ANIVERSARIO", "anniversary");
@@ -309,11 +321,11 @@ function renderCategoryMenu() {
     ui.categoryMenu.appendChild(liquidationButton);
   }
 
-  state.categories.forEach((category) => {
+  regularCategories.forEach((category) => {
     const button = createCategoryButton(
       categoryDisplayLabel(category),
       category,
-      isPinnedCategory(category) ? "pinned" : "default"
+      "default"
     );
     ui.categoryMenu.appendChild(button);
   });
