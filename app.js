@@ -2,7 +2,7 @@ const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTICNfcYM4ZrXvEr05Sd5n6pVk_wyRjBcl8A1EsP2Nlu-cgK8yJT1OYANoAp88ktCvHsTEAiXGquXdB/pub?gid=0&single=true&output=csv";
 
 const INFO_DESCRIPTION =
-  "Tienda de cachimbas y accesorios. L-V 07:00-14:30. S 07:00-11:30. Carretera de la Mojonera 282.";
+  "Tienda de cachimbas y accesorios. L-V 07:00-13:00 // 15:00-19:00. S 07:30-12:00. Carretera de la Mojonera 282.";
 const WHATSAPP_ORDER_PHONE = "34651441589";
 const INVALID_DEEP_LINK_MESSAGE =
   "La seccion, producto o categoria que te han compartido no se encuentra disponible en este momento.";
@@ -906,10 +906,10 @@ function initOpeningStatus() {
 
   const getSlotsForDay = (day) => {
     if (day >= 1 && day <= 5) {
-      return [[7 * 60, 14 * 60 + 30]];
+      return [[7 * 60, 13 * 60], [15 * 60, 19 * 60]];
     }
     if (day === 6) {
-      return [[7 * 60, 11 * 60 + 30]];
+      return [[7 * 60 + 30, 12 * 60]];
     }
     return [];
   };
