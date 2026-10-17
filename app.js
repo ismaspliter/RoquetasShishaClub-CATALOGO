@@ -29,7 +29,6 @@ const ui = {
   subtitle: document.getElementById("subtitle"),
   shopOpenStatus: document.getElementById("shopOpenStatus"),
   status: document.getElementById("status"),
-  setupPanel: document.getElementById("setupPanel"),
   catalogTitle: document.getElementById("catalogTitle"),
   categoryMenu: document.getElementById("categoryMenu"),
   subcategoryMenu: document.getElementById("subcategoryMenu"),
@@ -64,20 +63,15 @@ async function bootstrap() {
     state.items = normalizeRows(rows).filter((item) => item.showInWeb);
 
     buildCategoryState();
-    renderCategoryMenu();
-    renderSubcategoryMenu();
-    renderGallery();
     initSearch();
     initSort();
+    // applyCatalogStateFromUrl ya pinta menús y galería: así solo se pinta una vez.
     applyCatalogStateFromUrl();
     syncUrlFromState();
 
-    ui.setupPanel.style.display = "none";
-    document.body.classList.add("connected");
     setStatus(`Catalogo cargado: ${state.items.length} productos`);
   } catch (error) {
     console.error(error);
-    ui.setupPanel.style.display = "block";
     setStatus(`Error cargando CSV: ${error.message}`, true);
     ui.gallery.innerHTML = "";
 
@@ -232,6 +226,11 @@ function toBoolean(value, defaultValue) {
   }
 
   return ["true", "1", "si", "sí", "yes", "y", "verdadero"].includes(normalized);
+}
+
+// Miniatura más ligera para las tarjetas; el visor ampliado sigue usando w1200.
+function toCardImageUrl(imageUrl) {
+  return String(imageUrl || "").replace("sz=w1200", "sz=w600");
 }
 
 function toImageUrl(originalUrl) {
@@ -859,20 +858,28 @@ function parsePriceValue(priceText) {
 }
 
 function initSearch() {
+  let searchTimer = null;
+
   ui.searchInput.addEventListener("input", () => {
-    state.searchQuery = ui.searchInput.value.trim();
-    state.activeProduct = "";
-    ui.searchClear.classList.toggle("hidden", !state.searchQuery);
-    if (state.searchQuery) {
-      ui.catalogTitle.textContent = `Resultados: "${state.searchQuery}"`;
-    } else {
-      ui.catalogTitle.textContent = stripSpecialCategoryMarker(state.activeCategory) || "Catalogo";
-    }
-    renderGallery();
-    syncUrlFromState();
+    ui.searchClear.classList.toggle("hidden", !ui.searchInput.value.trim());
+
+    // Espera a que se deje de escribir para no repintar la galería en cada tecla.
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.searchQuery = ui.searchInput.value.trim();
+      state.activeProduct = "";
+      if (state.searchQuery) {
+        ui.catalogTitle.textContent = `Resultados: "${state.searchQuery}"`;
+      } else {
+        ui.catalogTitle.textContent = stripSpecialCategoryMarker(state.activeCategory) || "Catalogo";
+      }
+      renderGallery();
+      syncUrlFromState();
+    }, 200);
   });
 
   ui.searchClear.addEventListener("click", () => {
+    window.clearTimeout(searchTimer);
     ui.searchInput.value = "";
     state.searchQuery = "";
     state.activeProduct = "";
@@ -1028,7 +1035,7 @@ function openLightbox(src, altText, price = "", salePrice = "") {
 function closeLightbox() {
   ui.imageLightbox.classList.add("hidden");
   ui.imageLightbox.setAttribute("aria-hidden", "true");
-  ui.lightboxImage.src = "";
+  ui.lightboxImage.removeAttribute("src");
   ui.lightboxWhatsapp.href = "#";
   state.activeProductName = "";
   document.body.classList.remove("lightbox-open");
@@ -1070,7 +1077,6 @@ async function copyToClipboard(text) {
 
 function renderGallery() {
   const items = getFilteredItems();
-  ui.gallery.innerHTML = "";
 
   if (state.activeCategory === "ANIVERSARIO") {
     ui.catalogTitle.textContent = "5 Aniversario";
@@ -1088,10 +1094,13 @@ function renderGallery() {
     const empty = document.createElement("article");
     empty.className = "empty-state";
     empty.textContent = "No hay productos para este filtro.";
-    ui.gallery.appendChild(empty);
+    ui.gallery.replaceChildren(empty);
     setStatus("Sin resultados");
     return;
   }
+
+  // Se montan todas las tarjetas fuera de la página y se cambian de una vez.
+  const fragment = document.createDocumentFragment();
 
   items.forEach((item) => {
     const card = document.createElement("article");
@@ -1108,7 +1117,8 @@ function renderGallery() {
     const img = document.createElement("img");
     img.alt = item.name || "Producto";
     img.loading = "lazy";
-    img.src = item.imageUrl;
+    img.decoding = "async";
+    img.src = toCardImageUrl(item.imageUrl);
     img.style.cursor = "zoom-in";
     img.addEventListener("click", () => {
       state.activeProduct = toProductParam(item);
@@ -1173,8 +1183,10 @@ function renderGallery() {
 
     card.appendChild(img);
     card.appendChild(caption);
-    ui.gallery.appendChild(card);
+    fragment.appendChild(card);
   });
+
+  ui.gallery.replaceChildren(fragment);
 
   setStatus(`Mostrando ${items.length} producto(s)`);
 }

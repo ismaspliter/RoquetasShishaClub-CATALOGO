@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light only;
   --font-round: "Baloo 2", "Space Grotesk", sans-serif;
   --bg: #fff9e9;
   --bg-soft: #fffdf5;
@@ -37,13 +38,13 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: "Space Grotesk", sans-serif;
   color: var(--ink);
   background:
     radial-gradient(circle at 12% 20%, rgba(248, 200, 19, 0.28), transparent 35%),
     radial-gradient(circle at 88% 16%, rgba(49, 201, 210, 0.2), transparent 28%),
     linear-gradient(145deg, #fff9e9 0%, #fff4dd 100%);
-  transition: background 500ms ease;
 }
 
 body.connected {
@@ -439,7 +440,6 @@ body.shop-closed .brand-logo {
   transition: max-width 220ms ease, opacity 180ms ease, transform 220ms ease, margin-left 220ms ease;
 }
 
-.whatsapp-fab:hover,
 .whatsapp-fab:focus-visible {
   width: 170px;
   gap: 8px;
@@ -448,11 +448,26 @@ body.shop-closed .brand-logo {
   box-shadow: 0 10px 32px rgba(37, 211, 102, 0.55), 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.whatsapp-fab:hover span,
 .whatsapp-fab:focus-visible span {
   max-width: 120px;
   opacity: 1;
   transform: translateX(0);
+}
+
+@media (hover: hover) {
+  .whatsapp-fab:hover {
+    width: 170px;
+    gap: 8px;
+    padding: 0 14px;
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 10px 32px rgba(37, 211, 102, 0.55), 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .whatsapp-fab:hover span {
+    max-width: 120px;
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .whatsapp-fab:active {
@@ -836,7 +851,7 @@ body.connected .historia-block-title {
   font-size: 0.84rem;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.22);
-  transition: 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .historia-info .quick-link:first-child {
@@ -856,11 +871,13 @@ body.connected .historia-block-title {
   height: 16px;
 }
 
-.quick-link:hover {
-  transform: translateY(-2px);
-  color: var(--ink);
-  border-color: rgba(248, 200, 19, 0.7);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+@media (hover: hover) {
+  .quick-link:hover {
+    transform: translateY(-2px);
+    color: var(--ink);
+    border-color: rgba(248, 200, 19, 0.7);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  }
 }
 
 body.connected .historia-info .quick-links {
@@ -1074,12 +1091,14 @@ body.connected .historia-info .quick-link:last-child {
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: 180ms ease, box-shadow 180ms ease;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.category-chip:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.35);
+@media (hover: hover) {
+  .category-chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
 }
 
 .category-chip.active {
@@ -1171,19 +1190,13 @@ body.lightbox-open {
   overflow: hidden;
   border: 1px solid var(--line);
   min-height: 240px;
+  aspect-ratio: 4 / 5;
+  background: #2a211a;
+  contain: paint;
   box-shadow: var(--shadow);
   opacity: 0;
   transform: translateY(16px);
   animation: rise 420ms ease forwards;
-}
-
-.image-card,
-.image-card img,
-.image-caption,
-.stock-overlay,
-.category-chip {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 .image-card.offer-item {
@@ -1427,15 +1440,17 @@ body.lightbox-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: 180ms ease;
+  transition: transform 180ms ease;
 }
 
 body.connected .btn {
   color: var(--on-dark);
 }
 
-.btn:hover {
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .btn:disabled {
@@ -1658,6 +1673,7 @@ body.connected .btn {
 
 @media (hover: none) and (pointer: coarse) {
   .panel,
+  .panel-lite,
   .catalog-shell,
   .image-caption,
   .stock-overlay {
@@ -1671,15 +1687,40 @@ body.connected .btn {
     animation: none;
   }
 
-  .image-card img,
-  .image-caption,
-  .stock-overlay,
-  .category-chip {
-    transform: translateZ(0);
+  /* Formas de fondo sin filter: blur, que en Android se repinta al hacer scroll */
+  .bg-shape {
+    filter: none;
+  }
+
+  .shape-1 {
+    background: radial-gradient(circle, rgba(248, 200, 19, 0.42) 0%, transparent 70%);
+  }
+
+  .shape-2 {
+    background: radial-gradient(circle, rgba(49, 201, 210, 0.3) 0%, transparent 70%);
+  }
+
+  /* El halo del logo se queda fijo: animar box-shadow repinta en cada frame */
+  body.shop-open .brand-logo,
+  body.shop-closed .brand-logo {
+    animation: none;
   }
 
   .category-chip,
   .image-card img {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.shop-open .brand-logo,
+  body.shop-closed .brand-logo,
+  .image-card {
+    animation: none;
+  }
+
+  .image-card {
+    opacity: 1;
+    transform: none;
   }
 }
