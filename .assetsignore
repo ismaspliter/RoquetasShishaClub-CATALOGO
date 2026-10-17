@@ -1,0 +1,6 @@
+# Archivos del repo que no se publican en Cloudflare
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+README.md
